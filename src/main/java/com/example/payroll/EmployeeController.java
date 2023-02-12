@@ -3,7 +3,6 @@ package com.example.payroll;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.IanaLinkRelations;
+
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 
@@ -28,26 +29,7 @@ class EmployeeController {
         this.assembler = assembler;
     }
 
-    // Aggregate root
-
-//    @GetMapping("/employees")
-//    List<Employee> all() {
-//        return repository.findAll();
-//    }
-
-    @GetMapping("/employees/{id}")
-    EntityModel<Employee> one(@PathVariable Long id) {
-        Employee employee = repository.findById(id)
-                .orElseThrow(() -> new EmployeeNotFoundException(id));
-
-//        Since we had created a model assembler, we can use it instead of typing out the previously lengthy code
-        return assembler.toModel(employee);
-
-//        return EntityModel.of(employee, //
-//                linkTo(methodOn(EmployeeController.class).one(id)).withSelfRel(),
-//                linkTo(methodOn(EmployeeController.class).all()).withRel("employees"));
-    }
-
+    // Aggregate root (all employees)
     @GetMapping("/employees")
     CollectionModel<EntityModel<Employee>> all() {
         // New code after assembler
@@ -56,20 +38,17 @@ class EmployeeController {
                 .collect(Collectors.toList());
 
         return CollectionModel.of(employees, linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
+    }
+    // Get individual employee
+    @GetMapping("/employees/{id}")
+    EntityModel<Employee> one(@PathVariable Long id) {
+        Employee employee = repository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException(id));
 
-        // Old code
-//        List<EntityModel<Employee>> employees = repository.findAll().stream()
-//                .map(employee -> EntityModel.of(employee,
-//                        linkTo(methodOn(EmployeeController.class).one(employee.getId())).withSelfRel(),
-//                        linkTo(methodOn(EmployeeController.class).all()).withRel("employees")))
-//                .collect(Collectors.toList());
-//        return CollectionModel.of(employees, linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
+//        Since we had created a model assembler, we can use it instead of typing out the previously lengthy code
+        return assembler.toModel(employee);
     }
 
-//    @PostMapping("/employees")
-//    Employee newEmployee(@RequestBody Employee newEmployee) {
-//        return repository.save(newEmployee);
-//    }
 
     @PostMapping("/employees")
     ResponseEntity<?> newEmployee(@RequestBody Employee newEmployee) {
@@ -81,12 +60,6 @@ class EmployeeController {
     }
 
     // Single item
-//    @GetMapping("/employees/{id}")
-//    Employee one(@PathVariable Long id) {
-//        return repository.findById(id)
-//                .orElseThrow(() -> new EmployeeNotFoundException(id));
-//    }
-
     @PutMapping("/employees/{id}")
     ResponseEntity<?> replaceEmployee(@RequestBody Employee newEmployee, @PathVariable Long id) {
         Employee updatedEmployee = repository.findById(id) //
@@ -113,16 +86,6 @@ class EmployeeController {
 
         return ResponseEntity.noContent().build();
     }
-
-    @DeleteMapping("/employees/{id}")
-    void deleteEmployee(@PathVariable Long id) {
-        repository.deleteById(id);
-    }
 }
-
-// Progress: just before this sentence...
-//The new Employee object is saved as before. But the resulting object is wrapped using the EmployeeModelAssembler.
-// https://spring.io/guides/tutorials/rest/
-
 
 
